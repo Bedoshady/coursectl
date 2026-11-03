@@ -304,14 +304,16 @@ directly with their own account from their own IP.
 
 Before you publish:
 
-1. **Rename it.** `coursectl` and `moodle-*` are trademark landmines for a public repo
-   or PyPI package. Pick something neutral.
+1. **Keep the name neutral.** `coursectl` is deliberately not `eclass-*` or `moodle-*`,
+   which are trademark landmines for a public repo or PyPI package.
 2. **Set your real User-Agent** — `COURSECTL_USER_AGENT`, currently a
    `github.com/OWNER/...` placeholder. Being identifiable is deliberate and polite.
 3. **Don't bundle Playwright browsers.** They download to the user's own cache, which
    keeps their licences their problem. See `THIRD-PARTY-NOTICES.md`.
 4. **No real course content** in tests, screenshots, or issues. Use fabricated fixtures.
-5. Keep the banner at the top of this README, and ship `LICENSE` (fill in your name) plus
+5. **Keep `LICENSE` pure MIT** so the package metadata stays honest; the unofficial-use
+   terms live in `NOTICE.md`.
+6. **Keep the banner** at the top of this README, and ship `LICENSE`, `NOTICE.md` and
    `SECURITY.md`.
 
 Full analysis, including residual risks and a release checklist:

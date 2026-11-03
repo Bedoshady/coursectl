@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 <YOUR NAME>
+Copyright (c) 2026 Bedoshady
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,22 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-ADDITIONAL NOTICE (not part of the MIT grant, but part of the terms of use of
-this distribution):
-
-This software is an unofficial client for a Moodle-based course site. It is not
-affiliated with, endorsed by, or supported by York University, Moodle Pty Ltd, or
-Duo Security. "eClass", "Passport York", "Moodle" and "Duo" are the property of
-their respective owners.
-
-Using automated tooling may violate your institution's acceptable use policy and
-could result in your account being suspended. You are responsible for your own
-account and for complying with the terms you agreed to. Do not use this software
-to redistribute course material, to access accounts other than your own, or to
-bypass any access control.
-
-The authors provide no warranty and accept no liability for any consequence of
-use, including account suspension, data loss, or academic consequences.
