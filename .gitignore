@@ -39,3 +39,4 @@ recon/ssologin.html
 Thumbs.db
 desktop.ini
 .DS_Store
+recon/_*
