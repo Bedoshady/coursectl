@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 
-class EClassError(Exception):
+class CoursectlError(Exception):
     """Base class for every error this package raises deliberately."""
 
-    code = "eclass_error"
+    code = "coursectl_error"
     http_status = 500
 
     def __init__(self, message: str, *, detail: Any = None) -> None:
@@ -23,14 +23,14 @@ class EClassError(Exception):
         return payload
 
 
-class InvalidCredentials(EClassError):
+class InvalidCredentials(CoursectlError):
     """Passport York rejected the username/password pair."""
 
     code = "invalid_credentials"
     http_status = 401
 
 
-class LoginFlowError(EClassError):
+class LoginFlowError(CoursectlError):
     """The SSO flow reached a page we do not recognise.
 
     Typically means York changed the login page or is showing a terms-of-use
@@ -41,74 +41,74 @@ class LoginFlowError(EClassError):
     http_status = 502
 
 
-class MfaRequired(EClassError):
+class MfaRequired(CoursectlError):
     """The password was accepted, but a second factor is being demanded.
 
     Duo (or similar) cannot be completed by a headless HTTP client. Use
-    ``eclass login --browser`` or ``eclass login --cookie``.
+    ``coursectl login --browser`` or ``coursectl login --cookie``.
     """
 
     code = "mfa_required"
     http_status = 401
 
 
-class SessionNotAuthenticated(EClassError):
+class SessionNotAuthenticated(CoursectlError):
     """Supplied browser cookies do not represent a logged-in eClass session."""
 
     code = "session_not_authenticated"
     http_status = 401
 
 
-class TokenUnavailable(EClassError):
+class TokenUnavailable(CoursectlError):
     """SSO succeeded but Moodle never handed back a web-service token."""
 
     code = "token_unavailable"
     http_status = 502
 
 
-class SessionExpired(EClassError):
+class SessionExpired(CoursectlError):
     """The stored Moodle token is no longer accepted; re-login is required."""
 
     code = "session_expired"
     http_status = 401
 
 
-class Unauthorized(EClassError):
+class Unauthorized(CoursectlError):
     """The caller's API key is missing, unknown, or revoked."""
 
     code = "unauthorized"
     http_status = 401
 
 
-class Forbidden(EClassError):
+class Forbidden(CoursectlError):
     """The caller is authenticated but not allowed to do this."""
 
     code = "forbidden"
     http_status = 403
 
 
-class RegistrationClosed(EClassError):
+class RegistrationClosed(CoursectlError):
     code = "registration_closed"
     http_status = 403
 
 
-class NotFound(EClassError):
+class NotFound(CoursectlError):
     code = "not_found"
     http_status = 404
 
 
-class UpstreamError(EClassError):
+class UpstreamError(CoursectlError):
     """eClass returned an error or an unparseable response."""
 
     code = "upstream_error"
     http_status = 502
 
 
-class RateLimited(EClassError):
+class RateLimited(CoursectlError):
     code = "rate_limited"
     http_status = 429
 
 
-class DownloadError(EClassError):
+class DownloadError(CoursectlError):
     code = "download_error"
     http_status = 502

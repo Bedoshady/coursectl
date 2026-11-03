@@ -1,4 +1,4 @@
-# eclass-api
+# coursectl
 
 > **Unofficial. Not affiliated with, endorsed by, or supported by York University or
 > Moodle Pty Ltd.** "eClass" and "Passport York" are York University's names; "Moodle"
@@ -18,11 +18,11 @@ resulting token **on the server**, and exposes your courses, files, deadlines an
 as a clean HTTP API — plus an MCP server so an agent can use it directly.
 
 Instead of a browser holding your Moodle session, this service holds a delegated
-Moodle web-service token and hands *you* an opaque `ek_...` API key. Your password is
+Moodle web-service token and hands *you* an opaque `ck_...` API key. Your password is
 used once, in memory, and never stored.
 
 ```
-your app / MCP client ──ek_…──►  eclass-api  ──moodle token──►  eclass.yorku.ca
+your app / MCP client ──ck_…──►  coursectl  ──moodle token──►  eclass.yorku.ca
                                      │
                               Passport York SSO (server-side)
 ```
@@ -37,7 +37,7 @@ password API. So this project does what the official Moodle mobile app does — 
 mints a real web-service token through the SSO flow — but does it **server-side,
 with plain HTTP**.
 
-The flow it drives (`src/eclass_api/auth.py`):
+The flow it drives (`src/coursectl/auth.py`):
 
 ```
 GET  /admin/tool/mobile/launch.php?service=moodle_mobile_app&passport=…&urlscheme=moodlemobile
@@ -68,7 +68,7 @@ long-lived token:
 ### Option A — `--browser` (easiest)
 
 ```powershell
-eclass login --browser
+coursectl login --browser
 ```
 
 A Chromium window opens at eClass. Sign in with Passport York, approve the Duo push on
@@ -86,7 +86,7 @@ It uses a persistent profile in `data/browser-profile/`, so Duo's *"remember me 
 4. Run:
 
 ```powershell
-eclass login --cookie "MoodleSession=paste-here; MDL_SSP_SessID=paste-here"
+coursectl login --cookie "MoodleSession=paste-here; MDL_SSP_SessID=paste-here"
 ```
 
 The server takes those cookies, asks Moodle's `launch.php` for a token — which with an
@@ -109,7 +109,7 @@ Why this works: once a session is authenticated, calling
 
 If York ever puts a JavaScript or MFA step in the way, `--strategy mobile_sso`
 still works as long as the challenge is a plain form; otherwise point
-`ECLASS_MAX_REDIRECTS` up and read the SSO trace from `--verbose`.
+`COURSECTL_MAX_REDIRECTS` up and read the SSO trace from `--verbose`.
 
 ## What you get
 
@@ -144,7 +144,7 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-For `eclass login --browser` you also need Playwright's Chromium, which installs into
+For `coursectl login --browser` you also need Playwright's Chromium, which installs into
 *your* cache (it is not shipped with this project):
 
 ```powershell
@@ -159,12 +159,12 @@ playwright install chromium
 York uses Duo, so the browser or cookie route is the reliable one:
 
 ```powershell
-eclass login --browser
+coursectl login --browser
 # or
-eclass login --cookie "MoodleSession=…; MDL_SSP_SessID=…"
+coursectl login --cookie "MoodleSession=…; MDL_SSP_SessID=…"
 ```
 
-`eclass login <netid>` (password prompt) still works on Moodle sites without MFA, and
+`coursectl login <netid>` (password prompt) still works on Moodle sites without MFA, and
 against York it will stop at the Duo challenge with a `mfa_required` error rather than a
 misleading "wrong password". See [Duo two-factor authentication](#duo-two-factor-authentication).
 
@@ -175,7 +175,7 @@ misleading "wrong password". See [Duo two-factor authentication](#duo-two-factor
   moodle user  123456
   site         https://eclass.yorku.ca
 
-  API key      ek_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  API key      ck_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 Add `--verbose` to print the SSO breadcrumb trail if something looks off.
@@ -183,19 +183,19 @@ Add `--verbose` to print the SSO breadcrumb trail if something looks off.
 ### 2. Run the API
 
 ```powershell
-eclass serve --port 8787
+coursectl serve --port 8787
 ```
 
 ```powershell
-curl -H "Authorization: Bearer ek_…" http://127.0.0.1:8787/v1/courses
-curl -H "Authorization: Bearer ek_…" "http://127.0.0.1:8787/v1/deadlines?days=7"
-curl -H "Authorization: Bearer ek_…" -o eclass.ics http://127.0.0.1:8787/v1/calendar.ics
+curl -H "Authorization: Bearer ck_…" http://127.0.0.1:8787/v1/courses
+curl -H "Authorization: Bearer ck_…" "http://127.0.0.1:8787/v1/deadlines?days=7"
+curl -H "Authorization: Bearer ck_…" -o coursectl.ics http://127.0.0.1:8787/v1/calendar.ics
 ```
 
 ### 3. Point an MCP client at it
 
 ```powershell
-eclass mcp --account abc123
+coursectl mcp --account abc123
 ```
 
 Register it with your harness (stdio transport). Example for a JSON-based client:
@@ -203,8 +203,8 @@ Register it with your harness (stdio transport). Example for a JSON-based client
 ```json
 {
   "mcpServers": {
-    "eclass": {
-      "command": "C:\\dev\\reverse_engineering\\eclass\\.venv\\Scripts\\eclass.exe",
+    "coursectl": {
+      "command": "coursectl",
       "args": ["mcp", "--account", "abc123"]
     }
   }
@@ -222,27 +222,27 @@ EECS1012"*, or *"export my calendar"*.
 Over HTTP instead of stdio:
 
 ```powershell
-eclass mcp --account abc123 --http --port 8790
+coursectl mcp --account abc123 --http --port 8790
 ```
 
 ## Architecture
 
 ```
-src/eclass_api/
-  config.py      settings (ECLASS_* env / .env)
+src/coursectl/
+  config.py      settings (COURSECTL_* env / .env)
   auth.py        Passport York + Shibboleth SSO → Moodle token
   ws.py          Moodle REST Web Services client, param encoding, file streaming
-  eclass.py      domain layer: courses, contents, files, deadlines, grades, ICS
+  client.py      domain layer: courses, contents, files, deadlines, grades, ICS
   service.py     account lifecycle: sign in, encrypt, resolve API keys
   store.py       SQLite accounts + audit events
   security.py    Fernet token encryption, API-key hashing
   htmlforms.py   minimal HTML form parser for the SSO pages
   api/routes.py  FastAPI app
-  mcp_server.py  MCP tools (thin wrappers over eclass.py)
+  mcp_server.py  MCP tools (thin wrappers over client.py)
   cli.py         login / serve / mcp / accounts / revoke / check
 ```
 
-The REST API and the MCP server share `eclass.py`, so behaviour can never drift
+The REST API and the MCP server share `client.py`, so behaviour can never drift
 between them.
 
 ## Security model
@@ -256,15 +256,15 @@ between them.
 - **Re-login rotates the key** for that account; the previous key stops working.
 - **Downloads are host-restricted** to the configured eClass host, which prevents the
   download endpoint from being used as an SSRF primitive.
-- `POST /v1/auth/logout` and `eclass revoke` both wipe the stored token and key.
+- `POST /v1/auth/logout` and `coursectl revoke` both wipe the stored token and key.
 
 Hardening switches:
 
 ```ini
-ECLASS_ALLOW_OPEN_REGISTRATION=false   # only pre-provisioned accounts may log in
-ECLASS_REGISTRATION_SECRET=…           # shared secret needed by /v1/auth/login
-ECLASS_ADMIN_TOKEN=…                   # enables /v1/admin/*
-ECLASS_CORS_ORIGINS=["https://myapp.example"]
+COURSECTL_ALLOW_OPEN_REGISTRATION=false   # only pre-provisioned accounts may log in
+COURSECTL_REGISTRATION_SECRET=…           # shared secret needed by /v1/auth/login
+COURSECTL_ADMIN_TOKEN=…                   # enables /v1/admin/*
+COURSECTL_CORS_ORIGINS=["https://myapp.example"]
 ```
 
 ## Configuration
@@ -274,21 +274,21 @@ pointing at York.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `ECLASS_SITE_URL` | `https://eclass.yorku.ca` | Moodle base URL |
-| `ECLASS_SERVICE` | `moodle_mobile_app` | Web-service shortname |
-| `ECLASS_HOST` / `ECLASS_PORT` | `127.0.0.1` / `8787` | Bind address |
-| `ECLASS_DATABASE_PATH` | `data/eclass.db` | SQLite file |
-| `ECLASS_DOWNLOAD_DIR` | `data/downloads` | Where files land |
-| `ECLASS_REQUEST_TIMEOUT` | `45` | Upstream timeout (s) |
-| `ECLASS_MCP_ACCOUNT` | — | Default account for the MCP server |
+| `COURSECTL_SITE_URL` | `https://eclass.yorku.ca` | Moodle base URL |
+| `COURSECTL_SERVICE` | `moodle_mobile_app` | Web-service shortname |
+| `COURSECTL_HOST` / `COURSECTL_PORT` | `127.0.0.1` / `8787` | Bind address |
+| `COURSECTL_DATABASE_PATH` | `data/coursectl.db` | SQLite file |
+| `COURSECTL_DOWNLOAD_DIR` | `data/downloads` | Where files land |
+| `COURSECTL_REQUEST_TIMEOUT` | `45` | Upstream timeout (s) |
+| `COURSECTL_MCP_ACCOUNT` | — | Default account for the MCP server |
 
 ## Limits and caveats
 
 - **One token per account.** eClass may invalidate older tokens when you sign in from
-  another device; if you see `session_expired`, run `eclass login` again.
+  another device; if you see `session_expired`, run `coursectl login` again.
 - **Token lifetime is set by York.** Mobile app tokens normally do not expire, but an
   administrator can change `tokenduration`. There is no refresh endpoint, so recovery
-  always means a fresh `eclass login`.
+  always means a fresh `coursectl login`.
 - **`/v1/grades` needs the grade-report function** in the `moodle_mobile_app` service.
   Where it is absent you get a clear `upstream_error` rather than a crash.
 - **Respect York's acceptable-use policy** and the course material's licensing. This
@@ -304,9 +304,9 @@ directly with their own account from their own IP.
 
 Before you publish:
 
-1. **Rename it.** `eclass-api` and `moodle-*` are trademark landmines for a public repo
+1. **Rename it.** `coursectl` and `moodle-*` are trademark landmines for a public repo
    or PyPI package. Pick something neutral.
-2. **Set your real User-Agent** — `ECLASS_USER_AGENT`, currently a
+2. **Set your real User-Agent** — `COURSECTL_USER_AGENT`, currently a
    `github.com/OWNER/...` placeholder. Being identifiable is deliberate and polite.
 3. **Don't bundle Playwright browsers.** They download to the user's own cache, which
    keeps their licences their problem. See `THIRD-PARTY-NOTICES.md`.
@@ -338,11 +338,11 @@ Validated against the live York services on 2026-11-02:
 | HTTP API surface, MCP stdio handshake (13 tools) | ✅ |
 
 The final token exchange needs **your** authenticated session, because Duo is a second
-factor. Use `eclass login --browser` or `eclass login --cookie` (see
+factor. Use `coursectl login --browser` or `coursectl login --cookie` (see
 [Duo two-factor authentication](#duo-two-factor-authentication)):
 
 ```powershell
-eclass login --browser --verbose
+coursectl login --browser --verbose
 ```
 
 Expect the trace to end at `Moodle accepted the session and returned a token`, followed
@@ -359,7 +359,7 @@ To re-check the whole chain without credentials:
 
 ```powershell
 pytest                          # unit tests (no network)
-eclass check --account abc123   # live smoke test against eClass
+coursectl check --account abc123   # live smoke test against eClass
 python recon/mcp_probe.py       # MCP handshake + tool listing
 node recon/follow.mjs           # re-probe the SSO chain if York changes it
 ```

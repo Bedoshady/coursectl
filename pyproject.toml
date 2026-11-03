@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "eclass-api"
+name = "coursectl"
 version = "0.1.0"
-description = "A server-side API and MCP bridge for York University eClass (Moodle) with delegated, out-of-browser auth."
+description = "Local API and MCP bridge for Moodle-based course platforms: courses, lecture files, calendar, deadlines and grades for your own scripts and agents."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -24,10 +24,10 @@ browser = ["playwright>=1.40"]
 dev = ["pytest>=8", "pytest-asyncio>=0.23", "respx>=0.21"]
 
 [project.scripts]
-eclass = "eclass_api.cli:main"
+coursectl = "coursectl.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/eclass_api"]
+packages = ["src/coursectl"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

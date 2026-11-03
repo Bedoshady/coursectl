@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from eclass_api.cli import build_parser
+from coursectl.cli import build_parser
 
 
 def parse(argv: list[str]):

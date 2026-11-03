@@ -12,7 +12,7 @@ const targets = [
 for (const [path, label] of targets) {
   const url = 'https://eclass.yorku.ca' + path;
   try {
-    const res = await fetch(url, { redirect: 'manual', headers: { 'User-Agent': 'eclass-api-recon/0.1', 'Accept-Language': 'en-CA,en;q=0.9' } });
+    const res = await fetch(url, { redirect: 'manual', headers: { 'User-Agent': 'coursectl-recon/0.1', 'Accept-Language': 'en-CA,en;q=0.9' } });
     const loc = res.headers.get('location') || '';
     const text = await res.text();
     const isSso = loc.includes('shib.yorku.ca') || loc.includes('/idp/');

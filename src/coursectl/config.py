@@ -1,6 +1,6 @@
-"""Configuration for the eClass API bridge.
+"""Configuration for coursectl.
 
-All settings are read from environment variables prefixed with ``ECLASS_`` or
+All settings are read from environment variables prefixed with ``COURSECTL_`` or
 from a ``.env`` file in the project root.
 """
 
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     """Runtime configuration."""
 
     model_config = SettingsConfigDict(
-        env_prefix="ECLASS_",
+        env_prefix="COURSECTL_",
         env_file=(PROJECT_ROOT / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
@@ -48,11 +48,11 @@ class Settings(BaseSettings):
     max_redirects: int = 25
 
     # --- Storage --------------------------------------------------------
-    database_path: Path = PROJECT_ROOT / "data" / "eclass.db"
+    database_path: Path = PROJECT_ROOT / "data" / "coursectl.db"
     secret_key_file: Path = PROJECT_ROOT / "data" / "fernet.key"
     download_dir: Path = PROJECT_ROOT / "data" / "downloads"
 
-    user_agent: str = "eclass-api/0.1 (+https://github.com/OWNER/eclass-api)"
+    user_agent: str = "coursectl/0.1 (+https://github.com/OWNER/coursectl)"
     """Identifies this client on Web Services traffic.
 
     Being identifiable is deliberate: it is honest, and it lets an institution
@@ -61,7 +61,7 @@ class Settings(BaseSettings):
 
     # --- Access control -------------------------------------------------
     allow_open_registration: bool = True
-    """When false, ``/v1/auth/login`` requires the ``ECLASS_REGISTRATION_SECRET``."""
+    """When false, ``/v1/auth/login`` requires the ``COURSECTL_REGISTRATION_SECRET``."""
 
     registration_secret: str | None = None
     admin_token: str | None = None

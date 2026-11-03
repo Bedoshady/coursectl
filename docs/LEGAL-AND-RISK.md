@@ -61,7 +61,7 @@ to shut down and no content being redistributed.
 
 ### The three things that could still bite you
 
-1. **The name.** This is the single most likely complaint. `eclass-api` as a PyPI
+1. **The name.** This is the single most likely complaint. `coursectl` as a PyPI
    package or a repo title is asking for a trademark notice. Rename to something
    neutral, and put "unofficial, not affiliated with York University or Moodle Pty Ltd"
    in the README and the package description.
@@ -85,7 +85,7 @@ to shut down and no content being redistributed.
 - [ ] No real course content in tests, screenshots, issues, or docs
 - [ ] Credentials never stored; tokens encrypted; cookies never persisted (already true)
 - [ ] MFA stays human-in-the-loop
-- [ ] Set `ECLASS_USER_AGENT` to your real project URL before publishing
+- [ ] Set `COURSECTL_USER_AGENT` to your real project URL before publishing
 - [ ] Localhost binding by default (already `127.0.0.1`)
 - [ ] `SECURITY.md` with a private reporting address
 - [ ] Optional but kind: a heads-up to York UIT / the eClass team
@@ -264,10 +264,10 @@ much more sympathetic story than "I made a scraper".
 - [ ] Neutral project name; no York/Moodle branding
 - [ ] `NOTICE` + README: unofficial, unaffiliated, no warranty, use at your own risk
 - [ ] MFA stays human-in-the-loop; never automate Duo
-- [ ] Identifiable `User-Agent` (already: `ECLASS_USER_AGENT`) — be a good citizen, not a
+- [ ] Identifiable `User-Agent` (already: `COURSECTL_USER_AGENT`) — be a good citizen, not a
       stealth scraper
 - [ ] Rate limiting / no bulk enumeration of courses or users
-- [ ] `eclass revoke` and `logout` documented as the off-switch
+- [ ] `coursectl revoke` and `logout` documented as the off-switch
 - [ ] MIT licence with warranty disclaimer
 - [ ] Consider a heads-up to York UIT / the eClass team before publicising
 

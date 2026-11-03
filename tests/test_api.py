@@ -11,15 +11,15 @@ from pathlib import Path
 import httpx
 import pytest
 
-from eclass_api.api import create_app
-from eclass_api.auth import LoginTrace
-from eclass_api.config import Settings
-from eclass_api.eclass import Course, CourseFile
-from eclass_api.errors import Forbidden, NotFound, Unauthorized
-from eclass_api.service import AccountContext
-from eclass_api.store import Account
+from coursectl.api import create_app
+from coursectl.auth import LoginTrace
+from coursectl.config import Settings
+from coursectl.client import Course, CourseFile
+from coursectl.errors import Forbidden, NotFound, Unauthorized
+from coursectl.service import AccountContext
+from coursectl.store import Account
 
-API_KEY = "ek_testkey000000000000000000000000000"
+API_KEY = "ck_testkey000000000000000000000000000"
 ADMIN_TOKEN = "admin-secret"
 
 
@@ -53,7 +53,7 @@ class FakeClient:
         return [
             CourseFile(
                 filename="lecture05.pdf",
-                fileurl="https://eclass.test/pluginfile.php/2/mod_resource/content/0/lecture05.pdf",
+                fileurl="https://moodle.test/pluginfile.php/2/mod_resource/content/0/lecture05.pdf",
                 filesize=2048,
                 mimetype="application/pdf",
                 timemodified=None,
@@ -71,7 +71,7 @@ class FakeClient:
         return [f for f in await self.all_files() if query.lower() in f.filename.lower()]
 
     def is_allowed_file_url(self, url: str) -> bool:
-        return url.startswith("https://eclass.test/")
+        return url.startswith("https://moodle.test/")
 
     async def download(self, url, root: Path, *, filename=None, course_name=None, overwrite=False):
         return {"path": str(Path(root) / "lecture05.pdf"), "filename": "lecture05.pdf",
@@ -98,8 +98,8 @@ class FakeService:
     def __init__(self) -> None:
         self.account = Account(
             id="acct1", username="abc123", display_name="Doe, Jane", email="abc123@yorku.ca",
-            moodle_user_id=42, site_url="https://eclass.test", token_enc="enc",
-            private_token_enc=None, api_key_hash="hash", api_key_prefix="ek_testkey…",
+            moodle_user_id=42, site_url="https://moodle.test", token_enc="enc",
+            private_token_enc=None, api_key_hash="hash", api_key_prefix="ck_testkey…",
             created_at="2026-01-01T00:00:00+00:00", last_login_at=None, last_used_at=None,
             revoked_at=None,
         )
@@ -124,13 +124,13 @@ class FakeService:
         return [self.account]
 
     def stats(self):
-        return {"accounts": 1, "active": 1, "revoked": 0, "site_url": "https://eclass.test"}
+        return {"accounts": 1, "active": 1, "revoked": 0, "site_url": "https://moodle.test"}
 
 
 @pytest.fixture()
 def app(tmp_path):
     settings = Settings(
-        site_url="https://eclass.test",
+        site_url="https://moodle.test",
         database_path=tmp_path / "t.db",
         secret_key_file=tmp_path / "k.key",
         download_dir=tmp_path / "dl",
@@ -204,7 +204,7 @@ async def test_missing_key_is_401(client):
 
 
 async def test_wrong_key_is_401(client):
-    resp = await client.get("/v1/courses", headers=auth("ek_wrong"))
+    resp = await client.get("/v1/courses", headers=auth("ck_wrong"))
     assert resp.status_code == 401
 
 
@@ -286,7 +286,7 @@ async def test_file_download_happy_path(client):
         "/v1/files/download",
         headers=auth(),
         json={
-            "url": "https://eclass.test/pluginfile.php/2/mod_resource/content/0/lecture05.pdf",
+            "url": "https://moodle.test/pluginfile.php/2/mod_resource/content/0/lecture05.pdf",
             "filename": "lecture05.pdf",
         },
     )
@@ -315,7 +315,7 @@ async def test_admin_stats_with_token(client):
 
 async def test_admin_disabled_without_configured_token(tmp_path):
     settings = Settings(
-        site_url="https://eclass.test",
+        site_url="https://moodle.test",
         database_path=tmp_path / "t.db",
         secret_key_file=tmp_path / "k.key",
         download_dir=tmp_path / "dl",

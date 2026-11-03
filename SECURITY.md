@@ -30,7 +30,7 @@ These are deliberate and should never be "optimised" away:
 A Moodle token is a bearer credential for your account until revoked. Run:
 
 ```powershell
-eclass revoke <your-netid>
+coursectl revoke <your-netid>
 ```
 
 Then sign in again. Revocation wipes the stored token and invalidates the API key in one

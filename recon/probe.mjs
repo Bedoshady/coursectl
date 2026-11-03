@@ -19,7 +19,7 @@ for (const [method, url] of targets) {
       method,
       redirect: 'manual',
       signal: ctl.signal,
-      headers: { 'User-Agent': 'eclass-api-recon/0.1 (+research)' },
+      headers: { 'User-Agent': 'coursectl-recon/0.1 (+research)' },
       ...(method === 'POST'
         ? { body: new URLSearchParams({ username: 'x', password: 'y', service: 'moodle_mobile_app' }) }
         : {}),

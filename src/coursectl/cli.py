@@ -1,11 +1,11 @@
 """Command-line interface.
 
-    eclass login <user>      sign in once, store the delegated token, get an API key
-    eclass serve             run the HTTP API
-    eclass mcp --account <u> run the MCP server over stdio
-    eclass accounts          list stored accounts
-    eclass revoke <user>     invalidate an account's API key and token
-    eclass check             live smoke test against eClass
+    coursectl login <user>      sign in once, store the delegated token, get an API key
+    coursectl serve             run the HTTP API
+    coursectl mcp --account <u> run the MCP server over stdio
+    coursectl accounts          list stored accounts
+    coursectl revoke <user>     invalidate an account's API key and token
+    coursectl check             live smoke test against eClass
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import sys
 from typing import Any
 
 from .config import Settings, get_settings
-from .errors import EClassError, MfaRequired
+from .errors import CoursectlError, MfaRequired
 from .service import AccountService
 
 
@@ -88,7 +88,7 @@ def _cmd_login(args: argparse.Namespace, settings: Settings) -> int:
                 print("✗ A username is required unless you use --browser or --cookie.",
                       file=sys.stderr)
                 return 2
-            password = args.password or os.environ.get("ECLASS_PASSWORD")
+            password = args.password or os.environ.get("COURSECTL_PASSWORD")
             if not password:
                 password = getpass.getpass(f"Passport York password for {args.username}: ")
             try:
@@ -102,14 +102,14 @@ def _cmd_login(args: argparse.Namespace, settings: Settings) -> int:
                 )
             finally:
                 del password
-    except EClassError as exc:
+    except CoursectlError as exc:
         print(f"\n✗ Sign-in failed: {exc.message}", file=sys.stderr)
         if isinstance(exc, MfaRequired):
             print(
                 "\n  York requires Duo two-factor authentication, which a headless client\n"
                 "  cannot complete. Use one of these instead:\n"
-                "    eclass login --browser          (opens a window; handles Duo)\n"
-                "    eclass login --cookie \"...\"     (paste MoodleSession from DevTools)\n",
+                "    coursectl login --browser          (opens a window; handles Duo)\n"
+                "    coursectl login --cookie \"...\"     (paste MoodleSession from DevTools)\n",
                 file=sys.stderr,
             )
         elif exc.detail:
@@ -150,7 +150,7 @@ def _cmd_accounts(args: argparse.Namespace, settings: Settings) -> int:
     service = AccountService(settings)
     accounts = service.list_accounts()
     if not accounts:
-        print("No accounts. Run: eclass login <passport-york-id>")
+        print("No accounts. Run: coursectl login <passport-york-id>")
         return 0
     if args.json:
         print(json.dumps([a.public() for a in accounts], indent=2))
@@ -183,7 +183,7 @@ def _cmd_check(args: argparse.Namespace, settings: Settings) -> int:
         else:
             active = [a for a in service.list_accounts() if a.is_active]
             if not active:
-                print("No accounts stored. Run: eclass login <id>")
+                print("No accounts stored. Run: coursectl login <id>")
                 return 1
             ctx = service.build_context(active[0])
 
@@ -212,7 +212,7 @@ def _cmd_check(args: argparse.Namespace, settings: Settings) -> int:
 
     try:
         return asyncio.run(run())
-    except EClassError as exc:
+    except CoursectlError as exc:
         print(f"✗ {exc.message}", file=sys.stderr)
         if exc.detail:
             print(f"  detail: {json.dumps(exc.detail)[:800]}", file=sys.stderr)
@@ -236,8 +236,8 @@ def _add_verbose(parser: argparse.ArgumentParser, *, suppress_default: bool = Fa
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="eclass",
-        description="Server-side token bridge for York University eClass (Moodle).",
+        prog="coursectl",
+        description="Local API and MCP bridge for Moodle-based course platforms (e.g. York's eClass).",
     )
     _add_verbose(parser)
     sub = parser.add_subparsers(dest="command", required=True)

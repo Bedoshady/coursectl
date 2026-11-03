@@ -7,7 +7,7 @@ async function hit(label, url, opts = {}) {
     const res = await fetch(url, {
       redirect: 'manual',
       signal: ctl.signal,
-      headers: { 'User-Agent': 'eclass-api-recon/0.1 (+research)', ...(opts.headers || {}) },
+      headers: { 'User-Agent': 'coursectl-recon/0.1 (+research)', ...(opts.headers || {}) },
       ...opts,
     });
     clearTimeout(t);

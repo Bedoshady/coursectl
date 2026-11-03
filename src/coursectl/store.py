@@ -1,7 +1,7 @@
 """SQLite persistence for accounts and audit events.
 
 We keep this deliberately small: one connection per operation, WAL mode, and no
-ORM. All token material stored here is already encrypted by :mod:`eclass_api.security`.
+ORM. All token material stored here is already encrypted by :mod:`coursectl.security`.
 """
 
 from __future__ import annotations

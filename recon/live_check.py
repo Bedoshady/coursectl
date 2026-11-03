@@ -14,9 +14,9 @@ import sys
 
 sys.path.insert(0, "src")
 
-from eclass_api.auth import LoginTrace, mobile_sso_login, password_login
-from eclass_api.config import Settings
-from eclass_api.errors import EClassError, InvalidCredentials
+from coursectl.auth import LoginTrace, mobile_sso_login, password_login
+from coursectl.config import Settings
+from coursectl.errors import CoursectlError, InvalidCredentials
 
 
 async def main() -> int:
@@ -35,7 +35,7 @@ async def main() -> int:
         print("   UNEXPECTED: got a token")
     except InvalidCredentials as exc:
         print(f"   ✓ invalid_credentials: {exc.message}")
-    except EClassError as exc:
+    except CoursectlError as exc:
         print(f"   ~ {exc.code}: {exc.message}")
 
     print()
@@ -51,7 +51,7 @@ async def main() -> int:
         print(f"   ✓ reached Passport York and got: {exc.message}")
         print("   → all hops parsed; a valid password is the only missing piece")
         code = 0
-    except EClassError as exc:
+    except CoursectlError as exc:
         print(f"   ✗ {exc.code}: {exc.message}")
         if exc.detail:
             for key, value in exc.detail.items():

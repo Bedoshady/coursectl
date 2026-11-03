@@ -16,7 +16,7 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 async def main() -> int:
     params = StdioServerParameters(
         command=sys.executable,
-        args=["-m", "eclass_api", "mcp"],
+        args=["-m", "coursectl", "mcp"],
         cwd=str(Path(__file__).resolve().parents[1]),
     )
 

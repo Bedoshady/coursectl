@@ -2,14 +2,14 @@
 
 Run over stdio (default, what desktop harnesses expect)::
 
-    eclass mcp --account yournetid
+    coursectl mcp --account yournetid
 
 or over streamable HTTP::
 
-    eclass mcp --account yournetid --http --port 8790
+    coursectl mcp --account yournetid --http --port 8790
 
 The server acts as exactly one eClass account, chosen from ``--account`` /
-``ECLASS_MCP_ACCOUNT`` (or the API key in ``ECLASS_MCP_API_KEY``).
+``COURSECTL_MCP_ACCOUNT`` (or the API key in ``COURSECTL_MCP_API_KEY``).
 """
 
 from __future__ import annotations
@@ -24,8 +24,8 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 
 from .config import Settings, get_settings
-from .eclass import EClassClient, build_ics
-from .errors import EClassError, SessionExpired, Unauthorized
+from .client import CourseClient, build_ics
+from .errors import CoursectlError, SessionExpired, Unauthorized
 from .service import AccountContext, AccountService
 
 log = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def _ok(payload: Any) -> str:
 
 
 def _err(exc: Exception) -> str:
-    if isinstance(exc, EClassError):
+    if isinstance(exc, CoursectlError):
         return json.dumps(exc.to_dict(), ensure_ascii=False)
     return json.dumps({"error": "internal_error", "message": str(exc)}, ensure_ascii=False)
 
@@ -60,12 +60,12 @@ class _Context:
             return self.service.build_context(accounts[0])
         if not accounts:
             raise Unauthorized(
-                "No eClass account is configured. Run `eclass login <user>` first, "
-                "then start the MCP server with `eclass mcp --account <user>`."
+                "No eClass account is configured. Run `coursectl login <user>` first, "
+                "then start the MCP server with `coursectl mcp --account <user>`."
             )
         names = ", ".join(a.username for a in accounts)
         raise Unauthorized(
-            f"Several accounts exist ({names}); choose one with --account or ECLASS_MCP_ACCOUNT."
+            f"Several accounts exist ({names}); choose one with --account or COURSECTL_MCP_ACCOUNT."
         )
 
     async def get(self, *, refresh: bool = False) -> AccountContext:
@@ -79,7 +79,7 @@ class _Context:
             self._ctx = None
 
     @property
-    def client(self) -> EClassClient:
+    def client(self) -> CourseClient:
         raise RuntimeError("use `await ctx.get()`")
 
     async def call(self, fn, *args, **kwargs) -> Any:
@@ -99,11 +99,11 @@ def build_server(settings: Settings | None = None) -> MCPServer:
     state = _Context(service, settings)
 
     server = MCPServer(
-        name="eclass",
-        title="York University eClass",
+        name="coursectl",
+        title="University course platform (Moodle)",
         version="0.1.0",
         instructions=(
-            "Tools for a student's York University eClass (Moodle) account. "
+            "Tools for a student's university course platform (Moodle, e.g. York's eClass). "
             "Start with `whoami` or `list_courses` to discover course identifiers, then use "
             "`get_course_contents`, `list_course_files` or `download_file` to reach lecture "
             "material, `get_upcoming_deadlines` / `export_calendar` for dates, and "
@@ -193,12 +193,12 @@ def build_server(settings: Settings | None = None) -> MCPServer:
         overwrite: bool = False,
     ) -> str:
         try:
-            async def _run(client: EClassClient) -> dict[str, Any]:
+            async def _run(client: CourseClient) -> dict[str, Any]:
                 url = fileurl
                 course_name = None
                 if not url:
                     if not course or not filename:
-                        raise EClassError(
+                        raise CoursectlError(
                             "Provide either `fileurl`, or both `course` and `filename`."
                         )
                     resolved = await client.find_course(course)
@@ -210,14 +210,14 @@ def build_server(settings: Settings | None = None) -> MCPServer:
                         None,
                     ) or next((f for f in files if needle in f.filename.lower()), None)
                     if match is None:
-                        raise EClassError(f"No file matching {filename!r} in {resolved.fullname}.")
+                        raise CoursectlError(f"No file matching {filename!r} in {resolved.fullname}.")
                     url = match.fileurl
                     filename_actual = match.filename
                 else:
                     filename_actual = filename
 
                 if not client.is_allowed_file_url(url):
-                    raise EClassError("That URL is not hosted by eClass.")
+                    raise CoursectlError("That URL is not hosted by eClass.")
 
                 return await client.download(
                     url,
@@ -261,7 +261,7 @@ def build_server(settings: Settings | None = None) -> MCPServer:
             ctx = await state.get()
             events = await state.call(lambda c: c.upcoming_events(days=days, limit=500))
             body = build_ics(events, calendar_name=f"eClass — {ctx.account.username}")
-            path = _download_root() / "eclass-calendar.ics"
+            path = _download_root() / "coursectl-calendar.ics"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(body, encoding="utf-8")
             return _ok({"path": str(path), "events": len(events), "days": days})

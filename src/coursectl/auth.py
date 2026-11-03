@@ -410,8 +410,8 @@ async def mobile_sso_login(
                         raise MfaRequired(
                             "Passport York accepted the password but asked for a second "
                             "factor (Duo). Interactive MFA cannot be completed by a "
-                            "headless client — use `eclass login --browser` or "
-                            "`eclass login --cookie`.",
+                            "headless client — use `coursectl login --browser` or "
+                            "`coursectl login --cookie`.",
                             detail={
                                 "stage": "after_password",
                                 "url": _sanitize_url(str(resp.url)),
@@ -451,7 +451,7 @@ async def mobile_sso_login(
             if _looks_like_mfa(html, str(resp.url)):
                 raise MfaRequired(
                     "York is requesting a second factor (Duo). Complete it with "
-                    "`eclass login --browser`, then reuse that session.",
+                    "`coursectl login --browser`, then reuse that session.",
                     detail={
                         "stage": "challenge",
                         "url": _sanitize_url(str(resp.url)),

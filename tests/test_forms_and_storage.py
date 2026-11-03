@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import pytest
 
-from eclass_api.errors import Unauthorized
-from eclass_api.htmlforms import (
+from coursectl.errors import Unauthorized
+from coursectl.htmlforms import (
     looks_like_credential_form,
     parse_forms,
     pick_progression_form,
 )
-from eclass_api.security import (
+from coursectl.security import (
     SecretBox,
     generate_api_key,
     hash_api_key,
 )
-from eclass_api.store import Store
+from coursectl.store import Store
 
 LOGIN_HANDLER = """
 <form name="form1" action="/idp/profile/SAML2/Redirect/SSO?execution=e1s1" method="post">
@@ -63,7 +63,7 @@ def test_credential_form_detected_and_typed():
 
     # The real credential payload adds the username/password and echoes the
     # submit button, which is what Passport York expects.
-    from eclass_api.auth import _build_credential_payload
+    from coursectl.auth import _build_credential_payload
 
     built = _build_credential_payload(form, "abc123", "hunter2")
     assert built["mli"] == "abc123"
@@ -86,7 +86,7 @@ def test_malformed_html_does_not_raise():
 
 def test_credential_payload_never_contains_mutating_fields():
     """Even if the checkbox were mis-typed as hidden, the guard must strip it."""
-    from eclass_api.auth import NEVER_SUBMIT, _build_credential_payload
+    from coursectl.auth import NEVER_SUBMIT, _build_credential_payload
 
     html = """
     <form name="loginform" method="POST" action="/ppylogin/ppylogin">
@@ -122,7 +122,7 @@ def test_signin_is_read_only_by_default():
 
 def test_forced_password_change_is_distinguished_from_bad_login():
     """A page asking for a new password must not be reported as invalid credentials."""
-    from eclass_api.auth import _looks_like_password_change
+    from coursectl.auth import _looks_like_password_change
 
     change_html = """
     <html><body><p>Your password has expired and must be changed.</p>
@@ -150,10 +150,10 @@ def test_forced_password_change_is_distinguished_from_bad_login():
 # ---------------------------------------------------------------------------
 def test_api_key_shape_and_hashing():
     key, digest, prefix = generate_api_key()
-    assert key.startswith("ek_")
+    assert key.startswith("ck_")
     assert len(key) > 30
     assert digest == hash_api_key(key)
-    assert prefix.startswith("ek_")
+    assert prefix.startswith("ck_")
     assert key.startswith(prefix.rstrip("…"))
 
 
@@ -190,11 +190,11 @@ def test_secret_box_none_passthrough(tmp_path):
 def _upsert(store: Store, username: str = "abc123", key_hash: str = "h1") -> str:
     account = store.upsert_account(
         username=username,
-        site_url="https://eclass.test",
+        site_url="https://moodle.test",
         token_enc="enc-token",
         private_token_enc="enc-priv",
         api_key_hash=key_hash,
-        api_key_prefix="ek_abcdefg…",
+        api_key_prefix="ck_abcdefg…",
         display_name="Doe, Jane",
         email="abc123@yorku.ca",
         moodle_user_id=42,

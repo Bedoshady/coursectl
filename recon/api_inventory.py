@@ -11,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import httpx
 
-from eclass_api.api import create_app
-from eclass_api.config import Settings
+from coursectl.api import create_app
+from coursectl.config import Settings
 
 
 async def http_surface(tmp: Path) -> None:
@@ -51,7 +51,7 @@ async def mcp_surface() -> None:
 
     params = StdioServerParameters(
         command=sys.executable,
-        args=["-m", "eclass_api", "mcp"],
+        args=["-m", "coursectl", "mcp"],
         cwd=str(Path(__file__).resolve().parents[1]),
     )
     async with stdio_client(params) as (read, write):

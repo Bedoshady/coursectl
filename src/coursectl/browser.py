@@ -1,6 +1,6 @@
 """Browser-assisted sign-in, for when a second factor is unavoidable.
 
-York's eClass login goes through Passport York and then **Duo**. No headless
+York's coursectl login goes through Passport York and then **Duo**. No headless
 HTTP client can satisfy that, and it should not try to. The honest solution is
 to let a human complete the challenge once in a real browser, then capture the
 resulting session and mint a long-lived Moodle token from it.
@@ -28,7 +28,7 @@ from typing import Mapping
 
 from .auth import token_from_cookies
 from .config import Settings
-from .errors import EClassError, LoginFlowError, SessionNotAuthenticated
+from .errors import CoursectlError, LoginFlowError, SessionNotAuthenticated
 
 log = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ async def login_with_browser(
                 except SessionNotAuthenticated as exc:
                     last_error = exc
                     continue
-                except EClassError as exc:
+                except CoursectlError as exc:
                     last_error = exc
                     log.debug("still waiting: %s", exc.message)
                     continue
@@ -160,5 +160,5 @@ async def cookies_present(settings: Settings, cookies: Mapping[str, str]) -> boo
     try:
         await token_from_cookies(cookies, settings)
         return True
-    except EClassError:
+    except CoursectlError:
         return False

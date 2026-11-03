@@ -18,7 +18,7 @@ async function hit(method, path, { headers = {}, body } = {}) {
 await hit('GET', '/health');
 await hit('GET', '/');
 await hit('GET', '/v1/courses');
-await hit('GET', '/v1/courses', { headers: { Authorization: 'Bearer ek_bogus' } });
+await hit('GET', '/v1/courses', { headers: { Authorization: 'Bearer ck_bogus' } });
 await hit('GET', '/v1/admin/stats');
 await hit('POST', '/v1/auth/login', { body: { username: 'x', password: 'y', strategy: 'nope' } });
 const openapi = await fetch(base + '/openapi.json');

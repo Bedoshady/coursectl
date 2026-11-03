@@ -9,7 +9,7 @@ from typing import Any, Mapping
 
 from .auth import LoginTrace, TokenBundle, acquire_tokens, token_from_cookies
 from .config import Settings
-from .eclass import EClassClient
+from .client import CourseClient
 from .errors import RegistrationClosed, SessionExpired, Unauthorized
 from .security import SecretBox, constant_time_equals, generate_api_key, hash_api_key
 from .store import Account, Store
@@ -23,7 +23,7 @@ class AccountContext:
     """An authenticated account plus a ready-to-use eClass client."""
 
     account: Account
-    client: EClassClient
+    client: CourseClient
 
     @property
     def username(self) -> str:
@@ -182,7 +182,7 @@ class AccountService:
         account = self.store.get_account_by_username(username.strip().lower())
         if account is None:
             raise Unauthorized(
-                f"No stored account for {username!r}. Run `eclass login` first."
+                f"No stored account for {username!r}. Run `coursectl login` first."
             )
         if not account.is_active:
             raise Unauthorized("This account has been revoked.")
@@ -194,7 +194,7 @@ class AccountService:
             raise Unauthorized("This account has been revoked.")
         return AccountContext(account=account, client=self.build_client(account))
 
-    def build_client(self, account: Account) -> EClassClient:
+    def build_client(self, account: Account) -> CourseClient:
         token = self.secrets.decrypt(account.token_enc)
         if not token:
             raise SessionExpired(
@@ -206,7 +206,7 @@ class AccountService:
             timeout=self.settings.request_timeout,
             user_agent=self.settings.user_agent,
         )
-        return EClassClient(ws, account.site_url or self.settings.site_url)
+        return CourseClient(ws, account.site_url or self.settings.site_url)
 
     # -- administration --------------------------------------------------
     def revoke(self, username: str) -> bool:

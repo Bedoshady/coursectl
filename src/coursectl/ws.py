@@ -65,7 +65,7 @@ class MoodleWebService:
         *,
         timeout: float = 45.0,
         max_retries: int = 2,
-        user_agent: str = "eclass-api/0.1 (+https://github.com/OWNER/eclass-api)",
+        user_agent: str = "coursectl/0.1 (+https://github.com/OWNER/coursectl)",
     ) -> None:
         self.site_url = site_url.rstrip("/")
         self.token = token

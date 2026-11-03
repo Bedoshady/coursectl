@@ -13,9 +13,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from eclass_api import auth
-from eclass_api.config import Settings
-from eclass_api.errors import EClassError
+from coursectl import auth
+from coursectl.config import Settings
+from coursectl.errors import CoursectlError
 
 captured: dict[str, str] = {}
 real_builder = auth._build_credential_payload
@@ -40,7 +40,7 @@ async def main() -> int:
 
     try:
         await auth.mobile_sso_login("zzzzzzzzz", "not-the-password", settings)
-    except EClassError as exc:
+    except CoursectlError as exc:
         print(f"expected rejection: {exc.code}: {exc.message}\n")
 
     if not captured:

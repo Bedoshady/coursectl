@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from eclass_api.browser import DEFAULT_BROWSER_PATHS, _ensure_browser_path
+from coursectl.browser import DEFAULT_BROWSER_PATHS, _ensure_browser_path
 
 
 async def main() -> int:

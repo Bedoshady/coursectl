@@ -4,7 +4,7 @@ Design notes
 ------------
 * Passwords are **never** persisted. We keep only the delegated Moodle web-service
   token, encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
-* Callers get an opaque ``ek_...`` API key. Only its SHA-256 hash is stored, so a
+* Callers get an opaque ``ck_...`` API key. Only its SHA-256 hash is stored, so a
   database leak does not hand out working credentials.
 """
 
@@ -21,7 +21,7 @@ from cryptography.fernet import Fernet, InvalidToken
 
 from .errors import Unauthorized
 
-API_KEY_PREFIX = "ek_"
+API_KEY_PREFIX = "ck_"
 API_KEY_BYTES = 32
 
 

@@ -18,8 +18,8 @@ Base URL `http://127.0.0.1:8787`. Interactive docs at `/docs`, machine schema at
 Every route except `/`, `/health`, `/docs` and `POST /v1/auth/login` requires one of:
 
 ```
-Authorization: Bearer ek_...
-X-API-Key: ek_...
+Authorization: Bearer ck_...
+X-API-Key: ck_...
 ```
 
 `{course}` accepts a numeric course id, a shortname (`EECS1012`), or a
@@ -36,7 +36,7 @@ case-insensitive substring of the full course name.
 
 | Method | Path | Body / params | Purpose |
 | --- | --- | --- | --- |
-| `POST` | `/v1/auth/login` | `username`, `password`, or `cookie`, plus `strategy` (auto\|password\|mobile_sso), `registration_secret` | Exchange credentials or a browser session for an `ek_…` API key |
+| `POST` | `/v1/auth/login` | `username`, `password`, or `cookie`, plus `strategy` (auto\|password\|mobile_sso), `registration_secret` | Exchange credentials or a browser session for an `ck_…` API key |
 | `POST` | `/v1/auth/logout` | — | Revoke the API key and wipe the stored token |
 
 ### account
@@ -83,7 +83,7 @@ case-insensitive substring of the full course name.
 
 ### admin
 
-Require `ECLASS_ADMIN_TOKEN` in the `Authorization` header. Disabled when unset.
+Require `COURSECTL_ADMIN_TOKEN` in the `Authorization` header. Disabled when unset.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ Require `ECLASS_ADMIN_TOKEN` in the `Authorization` header. Disabled when unset.
 | `session_not_authenticated` | 401 | Supplied cookies are not a logged-in session |
 | `session_expired` | 401 | Stored Moodle token no longer accepted — sign in again |
 | `forbidden` | 403 | Not allowed (foreign download host, admin disabled) |
-| `registration_closed` | 403 | New accounts need `ECLASS_REGISTRATION_SECRET` |
+| `registration_closed` | 403 | New accounts need `COURSECTL_REGISTRATION_SECRET` |
 | `not_found` | 404 | No matching course / file |
 | `rate_limited` | 429 | Reserved |
 | `login_flow_error` | 502 | Unrecognised page in the SSO flow |
@@ -116,12 +116,12 @@ Require `ECLASS_ADMIN_TOKEN` in the `Authorization` header. Disabled when unset.
 ## MCP server
 
 ```powershell
-eclass mcp --account you   # stdio (harnesses)
-eclass mcp --account you --http --port 8790
+coursectl mcp --account you   # stdio (harnesses)
+coursectl mcp --account you --http --port 8790
 ```
 
-The server acts as exactly one account: `--account`, `ECLASS_MCP_ACCOUNT`, or
-`ECLASS_MCP_API_KEY`.
+The server acts as exactly one account: `--account`, `COURSECTL_MCP_ACCOUNT`, or
+`COURSECTL_MCP_API_KEY`.
 
 | Tool | Parameters | Returns |
 | --- | --- | --- |
@@ -133,7 +133,7 @@ The server acts as exactly one account: `--account`, `ECLASS_MCP_ACCOUNT`, or
 | `download_file` | `fileurl?`, `course?`, `filename?`, `overwrite?` | Local path + size |
 | `get_upcoming_deadlines` | `days?` (14) | Events/deadlines |
 | `get_calendar` | `days?` (30) | Full event list |
-| `export_calendar` | `days?` (120) | Writes `eclass-calendar.ics`, returns path |
+| `export_calendar` | `days?` (120) | Writes `coursectl-calendar.ics`, returns path |
 | `get_assignments` | `course?` | Assignments with due dates |
 | `get_grades` | `course` | Grade items + total |
 | `get_announcements` | `course?` | News forums |

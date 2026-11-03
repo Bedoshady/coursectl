@@ -4,7 +4,7 @@ Auth model
 ----------
 1. ``POST /v1/auth/login`` with a Passport York username + password.
 2. The server drives SSO, receives a Moodle web-service token, and keeps it.
-3. The caller receives an opaque ``ek_...`` API key and uses it as a bearer
+3. The caller receives an opaque ``ck_...`` API key and uses it as a bearer
    token from then on. The password is forgotten immediately.
 """
 
@@ -18,8 +18,8 @@ from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
 from ..config import Settings, get_settings
-from ..eclass import build_ics
-from ..errors import EClassError, Forbidden, InvalidCredentials, Unauthorized
+from ..client import build_ics
+from ..errors import CoursectlError, Forbidden, InvalidCredentials, Unauthorized
 from ..service import AccountContext, AccountService
 
 API_VERSION = "0.1.0"
@@ -103,8 +103,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.exception_handler(EClassError)
-    async def _handle_eclass_error(_: Request, exc: EClassError) -> JSONResponse:
+    @app.exception_handler(CoursectlError)
+    async def _handle_coursectl_error(_: Request, exc: CoursectlError) -> JSONResponse:
         return JSONResponse(status_code=exc.http_status, content=exc.to_dict())
 
     _register_routes(app)
@@ -307,7 +307,7 @@ def _register_routes(app: FastAPI) -> None:
         return Response(
             content=body,
             media_type="text/calendar; charset=utf-8",
-            headers={"Content-Disposition": 'attachment; filename="eclass.ics"'},
+            headers={"Content-Disposition": 'attachment; filename="coursectl.ics"'},
         )
 
     # -- coursework aggregate -------------------------------------------
@@ -325,7 +325,7 @@ def _register_routes(app: FastAPI) -> None:
     def _require_admin(authorization: str | None) -> None:
         expected = app.state.settings.admin_token
         if not expected:
-            raise Forbidden("Admin routes are disabled (set ECLASS_ADMIN_TOKEN).")
+            raise Forbidden("Admin routes are disabled (set COURSECTL_ADMIN_TOKEN).")
         supplied = ""
         if authorization:
             scheme, _, value = authorization.partition(" ")

@@ -6,11 +6,11 @@ import httpx
 import pytest
 import respx
 
-from eclass_api.eclass import EClassClient, build_ics, _extract_files, Course
-from eclass_api.errors import SessionExpired, UpstreamError
-from eclass_api.ws import MoodleWebService, encode_params, flatten_params
+from coursectl.client import CourseClient, build_ics, _extract_files, Course
+from coursectl.errors import SessionExpired, UpstreamError
+from coursectl.ws import MoodleWebService, encode_params, flatten_params
 
-SITE = "https://eclass.test"
+SITE = "https://moodle.test"
 
 SITE_INFO = {
     "sitename": "eClass",
@@ -104,9 +104,9 @@ async def test_calls_identify_the_client():
     route = respx.post(f"{SITE}/webservice/rest/server.php").mock(
         return_value=httpx.Response(200, json=SITE_INFO)
     )
-    ws = MoodleWebService(SITE, "tok", user_agent="eclass-api/9.9 (+https://example.test)")
+    ws = MoodleWebService(SITE, "tok", user_agent="coursectl/9.9 (+https://example.test)")
     await ws.call("core_webservice_get_site_info")
-    assert route.calls[0].request.headers["user-agent"] == "eclass-api/9.9 (+https://example.test)"
+    assert route.calls[0].request.headers["user-agent"] == "coursectl/9.9 (+https://example.test)"
 
 
 @respx.mock
@@ -211,13 +211,13 @@ async def test_client_course_resolution_by_shortname_and_fuzzy():
     respx.post(f"{SITE}/webservice/rest/server.php").mock(
         side_effect=lambda request: httpx.Response(200, json=_dispatch(request))
     )
-    client = EClassClient(MoodleWebService(SITE, "tok"), SITE)
+    client = CourseClient(MoodleWebService(SITE, "tok"), SITE)
 
     assert (await client.find_course("EECS1012")).id == 7
     assert (await client.find_course("9")).id == 9
     assert (await client.find_course("calculus")).id == 9
 
-    from eclass_api.errors import NotFound
+    from coursectl.errors import NotFound
 
     with pytest.raises(NotFound):
         await client.find_course("physics")
@@ -239,7 +239,7 @@ async def test_client_course_contents_shape():
     respx.post(f"{SITE}/webservice/rest/server.php").mock(
         side_effect=lambda request: httpx.Response(200, json=_dispatch(request))
     )
-    client = EClassClient(MoodleWebService(SITE, "tok"), SITE)
+    client = CourseClient(MoodleWebService(SITE, "tok"), SITE)
     payload = await client.course_contents("EECS1012")
 
     assert payload["course"]["shortname"] == "EECS1012"
@@ -248,7 +248,7 @@ async def test_client_course_contents_shape():
 
 
 def test_is_allowed_file_url_blocks_other_hosts():
-    client = EClassClient(MoodleWebService(SITE, "tok"), SITE)
+    client = CourseClient(MoodleWebService(SITE, "tok"), SITE)
     assert client.is_allowed_file_url(f"{SITE}/pluginfile.php/1/a.pdf")
     assert not client.is_allowed_file_url("https://evil.example/a.pdf")
     assert not client.is_allowed_file_url("file:///etc/passwd")

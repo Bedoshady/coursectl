@@ -6,11 +6,11 @@ import httpx
 import pytest
 import respx
 
-from eclass_api.config import Settings
-from eclass_api.errors import InvalidCredentials, RegistrationClosed, Unauthorized
-from eclass_api.service import AccountService
+from coursectl.config import Settings
+from coursectl.errors import InvalidCredentials, RegistrationClosed, Unauthorized
+from coursectl.service import AccountService
 
-SITE = "https://eclass.test"
+SITE = "https://moodle.test"
 PASSWORD = "super-secret-passphrase"
 TOKEN = "moodle-token-abc123"
 
@@ -28,7 +28,7 @@ SITE_INFO = {
 def make_settings(tmp_path, **overrides) -> Settings:
     return Settings(
         site_url=SITE,
-        database_path=tmp_path / "eclass.db",
+        database_path=tmp_path / "coursectl.db",
         secret_key_file=tmp_path / "fernet.key",
         download_dir=tmp_path / "downloads",
         **overrides,
@@ -53,7 +53,7 @@ async def test_login_stores_token_and_returns_key(tmp_path):
 
     account, api_key, trace = await service.login("abc123", PASSWORD)
 
-    assert api_key.startswith("ek_")
+    assert api_key.startswith("ck_")
     assert account.username == "abc123"
     assert account.display_name == "Doe, Jane"
     assert account.moodle_user_id == 42
@@ -91,7 +91,7 @@ async def test_resolve_round_trip(tmp_path):
     assert ctx.account.moodle_user_id == 42
 
     with pytest.raises(Unauthorized):
-        service.resolve("ek_not-a-real-key")
+        service.resolve("ck_not-a-real-key")
 
 
 @respx.mock
@@ -149,7 +149,7 @@ async def test_closed_registration_requires_secret(tmp_path):
 
     account, api_key, _ = await service.login("abc123", PASSWORD, registration_secret="sesame")
     assert account.username == "abc123"
-    assert api_key.startswith("ek_")
+    assert api_key.startswith("ck_")
 
 
 @respx.mock
@@ -165,7 +165,7 @@ async def test_token_rejected_immediately_is_reported(tmp_path):
     )
     service = AccountService(make_settings(tmp_path))
 
-    from eclass_api.errors import SessionExpired
+    from coursectl.errors import SessionExpired
 
     with pytest.raises(SessionExpired):
         await service.login("abc123", PASSWORD)
@@ -196,7 +196,7 @@ async def test_login_via_cookies_provisions_from_session(tmp_path):
     # Username comes from Moodle, not from the caller.
     assert account.username == "abc123"
     assert account.display_name == "Doe, Jane"
-    assert api_key.startswith("ek_")
+    assert api_key.startswith("ck_")
     stored = service.store.get_account_by_username("abc123")
     assert stored is not None
     assert service.secrets.decrypt(stored.token_enc) == "cookie-token"

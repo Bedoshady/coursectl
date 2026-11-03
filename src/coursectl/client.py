@@ -90,7 +90,7 @@ class Course:
         }
 
 
-class EClassClient:
+class CourseClient:
     """Convenience wrapper around one authenticated Moodle account."""
 
     def __init__(self, ws: MoodleWebService, site_url: str) -> None:
@@ -518,7 +518,7 @@ def build_ics(events: list[dict[str, Any]], calendar_name: str = "eClass") -> st
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//eclass-api//eClass bridge//EN",
+        "PRODID:-//coursectl//eClass bridge//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
         f"X-WR-CALNAME:{_ics_escape(calendar_name)}",
@@ -545,7 +545,7 @@ def build_ics(events: list[dict[str, Any]], calendar_name: str = "eClass") -> st
         lines.extend(
             [
                 "BEGIN:VEVENT",
-                f"UID:eclass-{event.get('id') or abs(hash(start_iso))}@eclass-api",
+                f"UID:coursectl-{event.get('id') or abs(hash(start_iso))}@coursectl",
                 f"DTSTAMP:{stamp}",
                 f"DTSTART:{start_dt.astimezone(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
                 f"DTEND:{end_dt.astimezone(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",

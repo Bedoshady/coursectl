@@ -8,15 +8,15 @@ import httpx
 import pytest
 import respx
 
-from eclass_api.auth import (
+from coursectl.auth import (
     InvalidCredentials,
     LoginTrace,
     acquire_tokens,
     mobile_sso_login,
     parse_token_redirect,
 )
-from eclass_api.config import Settings
-from eclass_api.errors import LoginFlowError, TokenUnavailable
+from coursectl.config import Settings
+from coursectl.errors import LoginFlowError, TokenUnavailable
 
 LOGIN_HANDLER_HTML = """
 <html><body>
@@ -60,7 +60,7 @@ PPY_ERROR_HTML = """
 
 def make_settings() -> Settings:
     return Settings(
-        site_url="https://eclass.test",
+        site_url="https://moodle.test",
         passport_host="passportyork.test",
         database_path=":memory:",  # type: ignore[arg-type]
         secret_key_file="memory.key",  # type: ignore[arg-type]
@@ -102,7 +102,7 @@ def test_parse_token_redirect_without_private_token():
 
 def test_parse_token_redirect_rejects_wrong_scheme():
     with pytest.raises(TokenUnavailable):
-        parse_token_redirect("https://eclass.test/somewhere")
+        parse_token_redirect("https://moodle.test/somewhere")
 
 
 def test_parse_token_redirect_rejects_garbage():
@@ -118,7 +118,7 @@ async def test_mobile_sso_login_completes_full_chain():
     settings = make_settings()
     final = token_redirect("real-token", "real-private")
 
-    respx.get(url__regex=r"^https://eclass\.test/admin/tool/mobile/launch\.php\?.*").mock(
+    respx.get(url__regex=r"^https://moodle\.test/admin/tool/mobile/launch\.php\?.*").mock(
         return_value=httpx.Response(
             303, headers={"location": "https://shib.test/idp/profile/SAML2/Redirect/SSO?SAMLRequest=x"}
         )
@@ -156,10 +156,10 @@ async def test_mobile_sso_login_completes_full_chain():
     )
     respx.get(url__regex=r".*SAML2/POST/SSO.*").mock(
         return_value=httpx.Response(
-            302, headers={"location": "https://eclass.test/Shibboleth.sso/SAML2/POST"}
+            302, headers={"location": "https://moodle.test/Shibboleth.sso/SAML2/POST"}
         )
     )
-    respx.get("https://eclass.test/Shibboleth.sso/SAML2/POST").mock(
+    respx.get("https://moodle.test/Shibboleth.sso/SAML2/POST").mock(
         return_value=httpx.Response(303, headers={"location": final})
     )
 
@@ -193,7 +193,7 @@ async def test_mobile_sso_login_completes_full_chain():
 async def test_mobile_sso_login_rejects_bad_password():
     settings = make_settings()
 
-    respx.get(url__regex=r"^https://eclass\.test/admin/tool/mobile/launch\.php\?.*").mock(
+    respx.get(url__regex=r"^https://moodle\.test/admin/tool/mobile/launch\.php\?.*").mock(
         return_value=httpx.Response(
             303, headers={"location": "https://shib.test/idp/profile/SAML2/Redirect/SSO?SAMLRequest=x"}
         )
@@ -232,7 +232,7 @@ async def test_mobile_sso_login_rejects_bad_password():
 @respx.mock
 async def test_mobile_sso_login_flags_unknown_page():
     settings = make_settings()
-    respx.get(url__regex=r"^https://eclass\.test/admin/tool/mobile/launch\.php\?.*").mock(
+    respx.get(url__regex=r"^https://moodle\.test/admin/tool/mobile/launch\.php\?.*").mock(
         return_value=httpx.Response(
             303, headers={"location": "https://shib.test/idp/profile/SAML2/Redirect/SSO?SAMLRequest=x"}
         )
@@ -254,10 +254,10 @@ async def test_mobile_sso_login_flags_unknown_page():
 @respx.mock
 async def test_mobile_sso_login_reports_mfa_not_bad_password():
     """The regression: a Duo page after a *correct* password must not read as 'rejected'."""
-    from eclass_api.errors import MfaRequired
+    from coursectl.errors import MfaRequired
 
     settings = make_settings()
-    respx.get(url__regex=r"^https://eclass\.test/admin/tool/mobile/launch\.php\?.*").mock(
+    respx.get(url__regex=r"^https://moodle\.test/admin/tool/mobile/launch\.php\?.*").mock(
         return_value=httpx.Response(
             303, headers={"location": "https://shib.test/idp/profile/SAML2/Redirect/SSO?SAMLRequest=x"}
         )
@@ -305,7 +305,7 @@ async def test_mobile_sso_login_reports_mfa_not_bad_password():
 @respx.mock
 async def test_wrong_password_still_reports_invalid_credentials():
     settings = make_settings()
-    respx.get(url__regex=r"^https://eclass\.test/admin/tool/mobile/launch\.php\?.*").mock(
+    respx.get(url__regex=r"^https://moodle\.test/admin/tool/mobile/launch\.php\?.*").mock(
         return_value=httpx.Response(
             303, headers={"location": "https://shib.test/idp/profile/SAML2/Redirect/SSO?SAMLRequest=x"}
         )
@@ -343,7 +343,7 @@ async def test_wrong_password_still_reports_invalid_credentials():
 # session-cookie path (the MFA escape hatch)
 # ---------------------------------------------------------------------------
 def test_parse_cookie_header_formats():
-    from eclass_api.auth import parse_cookie_header
+    from coursectl.auth import parse_cookie_header
 
     expected = {"MoodleSession": "abc", "MDL_SSP_SessID": "def"}
     assert parse_cookie_header("MoodleSession=abc; MDL_SSP_SessID=def") == expected
@@ -354,7 +354,7 @@ def test_parse_cookie_header_formats():
 
 
 def test_parse_cookie_header_handles_devtools_tabs():
-    from eclass_api.auth import parse_cookie_header
+    from coursectl.auth import parse_cookie_header
 
     pasted = "MoodleSession\tf8f5c9d0e1a2b3\t.yorku.ca\t/ \tSession\tMedium"
     parsed = parse_cookie_header(pasted)
@@ -363,11 +363,11 @@ def test_parse_cookie_header_handles_devtools_tabs():
 
 @respx.mock
 async def test_token_from_cookies_mints_token():
-    from eclass_api.auth import token_from_cookies
+    from coursectl.auth import token_from_cookies
 
     settings = make_settings()
     final = token_redirect("cookie-token", "cookie-priv")
-    route = respx.get(url__regex=r"^https://eclass\.test/admin/tool/mobile/launch\.php\?.*").mock(
+    route = respx.get(url__regex=r"^https://moodle\.test/admin/tool/mobile/launch\.php\?.*").mock(
         return_value=httpx.Response(303, headers={"location": final})
     )
 
@@ -381,11 +381,11 @@ async def test_token_from_cookies_mints_token():
 
 @respx.mock
 async def test_token_from_cookies_rejects_unauthenticated_session():
-    from eclass_api.auth import token_from_cookies
-    from eclass_api.errors import SessionNotAuthenticated
+    from coursectl.auth import token_from_cookies
+    from coursectl.errors import SessionNotAuthenticated
 
     settings = make_settings()
-    respx.get(url__regex=r"^https://eclass\.test/admin/tool/mobile/launch\.php\?.*").mock(
+    respx.get(url__regex=r"^https://moodle\.test/admin/tool/mobile/launch\.php\?.*").mock(
         return_value=httpx.Response(
             303, headers={"location": "https://shib.yorku.ca/idp/profile/SAML2/Redirect/SSO?x=1"}
         )
@@ -397,8 +397,8 @@ async def test_token_from_cookies_rejects_unauthenticated_session():
 
 
 async def test_token_from_cookies_requires_cookies():
-    from eclass_api.auth import token_from_cookies
-    from eclass_api.errors import SessionNotAuthenticated
+    from coursectl.auth import token_from_cookies
+    from coursectl.errors import SessionNotAuthenticated
 
     with pytest.raises(SessionNotAuthenticated):
         await token_from_cookies({}, make_settings())
@@ -424,11 +424,11 @@ async def test_auto_strategy_falls_back_to_sso(monkeypatch):
     )
 
     async def fake_sso(*args, **kwargs):
-        from eclass_api.auth import TokenBundle
+        from coursectl.auth import TokenBundle
 
         return TokenBundle(token="sso-token", strategy="mobile_sso")
 
-    monkeypatch.setattr("eclass_api.auth.mobile_sso_login", fake_sso)
+    monkeypatch.setattr("coursectl.auth.mobile_sso_login", fake_sso)
 
     trace = LoginTrace()
     bundle = await acquire_tokens("abc123", "pw", settings, strategy="auto", trace=trace)
@@ -454,7 +454,7 @@ async def test_password_strategy_handles_non_json():
     respx.post(url__regex=r".*/login/token\.php").mock(
         return_value=httpx.Response(200, text="<html>maintenance</html>")
     )
-    from eclass_api.errors import UpstreamError
+    from coursectl.errors import UpstreamError
 
     with pytest.raises(UpstreamError):
         await acquire_tokens("abc123", "pw", settings, strategy="password")
