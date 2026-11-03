@@ -78,7 +78,9 @@ to shut down and no content being redistributed.
 - [ ] Neutral project name; no York/Moodle marks in the name, logo, or package id
 - [ ] README banner: *unofficial, local-only, no telemetry, use at your own risk, may
       violate your institution's terms*
-- [ ] `LICENSE` = MIT (or Apache-2.0 for an explicit patent grant); warranty disclaimer
+- [ ] `LICENSE` = **pure**, verbatim MIT (or Apache-2.0 for an explicit patent grant) —
+      do not append extra restrictions to it, or the `MIT` metadata becomes untrue;
+      put the unofficial-use terms in `NOTICE.md` instead
 - [ ] `THIRD-PARTY-NOTICES.md` — all deps are permissive (see the file); don't bundle
       Playwright browser binaries
 - [ ] No telemetry, no analytics, no phone-home — keep it genuinely true

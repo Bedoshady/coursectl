@@ -10,8 +10,8 @@
 > **Use at your own risk.** Automating a login may violate your institution's acceptable
 > use policy and your account could be suspended. You are responsible for your own
 > account. Do not use this to access accounts other than your own, to redistribute course
-> material, or to bypass any access control. See
-> [docs/LEGAL-AND-RISK.md](docs/LEGAL-AND-RISK.md).
+> material, or to bypass any access control. See [NOTICE.md](NOTICE.md) for the terms
+> of use and [docs/LEGAL-AND-RISK.md](docs/LEGAL-AND-RISK.md) for the full reasoning.
 
 A server that logs in to **York University eClass** (Moodle) on your behalf, keeps the
 resulting token **on the server**, and exposes your courses, files, deadlines and grades
@@ -294,30 +294,6 @@ pointing at York.
 - **Respect York's acceptable-use policy** and the course material's licensing. This
   is an unofficial client; it is not affiliated with or endorsed by York University.
   Do not use it to redistribute course content.
-
-## Publishing this as a local tool
-
-The intended distribution model is a **local download you run yourself** — like
-`ollama`, `yt-dlp`, or any interop CLI. That posture is what keeps the legal surface
-small: you never take custody of anyone's credentials, and each user talks to York
-directly with their own account from their own IP.
-
-Before you publish:
-
-1. **Keep the name neutral.** `coursectl` is deliberately not `eclass-*` or `moodle-*`,
-   which are trademark landmines for a public repo or PyPI package.
-2. **Set your real User-Agent** — `COURSECTL_USER_AGENT`, currently a
-   `github.com/OWNER/...` placeholder. Being identifiable is deliberate and polite.
-3. **Don't bundle Playwright browsers.** They download to the user's own cache, which
-   keeps their licences their problem. See `THIRD-PARTY-NOTICES.md`.
-4. **No real course content** in tests, screenshots, or issues. Use fabricated fixtures.
-5. **Keep `LICENSE` pure MIT** so the package metadata stays honest; the unofficial-use
-   terms live in `NOTICE.md`.
-6. **Keep the banner** at the top of this README, and ship `LICENSE`, `NOTICE.md` and
-   `SECURITY.md`.
-
-Full analysis, including residual risks and a release checklist:
-[docs/LEGAL-AND-RISK.md](docs/LEGAL-AND-RISK.md).
 
 ## Status
 
