@@ -57,3 +57,24 @@ def test_help_exits_zero(capsys):
     with pytest.raises(SystemExit) as excinfo:
         parse(["--help"])
     assert excinfo.value.code == 0
+
+
+# ---------------------------------------------------------------------------
+# CLI time rendering
+# ---------------------------------------------------------------------------
+def test_local_time_converts_utc_to_local():
+    from datetime import datetime
+
+    from coursectl.cli import _local_time
+
+    iso = "2026-11-06T15:00:00+00:00"
+    local = datetime.fromisoformat(iso).astimezone()
+    offset = local.utcoffset()
+    minutes = int(offset.total_seconds() // 60) if offset else 0
+    sign = "+" if minutes >= 0 else "-"
+    hours, mins = divmod(abs(minutes), 60)
+    expected = f"{local.strftime('%a %d %b %Y %H:%M')} (UTC{sign}{hours:02d}:{mins:02d})"
+    assert _local_time(iso) == expected
+    assert "UTC" in _local_time(iso)
+    assert _local_time(None) == "\u2014"
+    assert _local_time("not-a-date") == "not-a-date"

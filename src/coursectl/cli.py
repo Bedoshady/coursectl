@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import sys
+from datetime import datetime, timezone
 from typing import Any
 
 from .config import Settings, get_settings
@@ -205,9 +206,12 @@ def _cmd_check(args: argparse.Namespace, settings: Settings) -> int:
                 print(f"  • {f.filename} ({f.filesize} bytes)")
 
         events = await ctx.client.upcoming_events(days=14, limit=10)
-        print(f"→ {len(events)} events in the next 14 days")
+        print(f"→ {len(events)} events in the next 14 days (times shown in your local zone)")
         for e in events[:5]:
-            print(f"  • {e.get('start')}  {e.get('name')}")
+            when = _local_time(e.get("start"))
+            flag = " [overdue]" if e.get("overdue") else ""
+            course = f"  ({e['course_name']})" if e.get("course_name") else ""
+            print(f"  • {when}  {e.get('name')}{course}{flag}")
         return 0
 
     try:
@@ -217,6 +221,29 @@ def _cmd_check(args: argparse.Namespace, settings: Settings) -> int:
         if exc.detail:
             print(f"  detail: {json.dumps(exc.detail)[:800]}", file=sys.stderr)
         return 1
+
+
+def _local_time(iso: str | None) -> str:
+    """Render an API timestamp (UTC ISO 8601) in the machine's local zone.
+
+    ``%Z`` is unreliable across platforms (Windows returns "Eastern Standard
+    Time"), so we show an explicit UTC offset instead — compact and unambiguous.
+    """
+    if not iso:
+        return "—"
+    try:
+        moment = datetime.fromisoformat(iso)
+    except (TypeError, ValueError):
+        return str(iso)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+
+    local = moment.astimezone()
+    offset = local.utcoffset()
+    minutes = int(offset.total_seconds() // 60) if offset else 0
+    sign = "+" if minutes >= 0 else "-"
+    hours, mins = divmod(abs(minutes), 60)
+    return f"{local.strftime('%a %d %b %Y %H:%M')} (UTC{sign}{hours:02d}:{mins:02d})"
 
 
 def _add_verbose(parser: argparse.ArgumentParser, *, suppress_default: bool = False) -> None:

@@ -6,6 +6,7 @@ MCP server are thin wrappers over it, so both stay in sync.
 
 from __future__ import annotations
 
+import html
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -118,8 +119,8 @@ class CourseClient:
         courses = [
             Course(
                 id=int(c.get("id", 0)),
-                shortname=str(c.get("shortname") or ""),
-                fullname=str(c.get("fullname") or c.get("displayname") or ""),
+                shortname=_clean_text(c.get("shortname"), limit=80),
+                fullname=_clean_text(c.get("fullname") or c.get("displayname"), limit=200),
                 category=c.get("category"),
                 visible=bool(c.get("visible", True)),
                 startdate=_ts(c.get("startdate")),
@@ -306,7 +307,7 @@ class CourseClient:
                         "cmid": a.get("cmid"),
                         "course_id": cid,
                         "course_name": names.get(cid, course.get("fullname", "")),
-                        "name": a.get("name"),
+                        "name": _clean_text(a.get("name")),
                         "due": _ts(a.get("duedate")),
                         "cutoff": _ts(a.get("cutoffdate")),
                         "opens": _ts(a.get("allowsubmissionsfromdate")),
@@ -370,7 +371,7 @@ class CourseClient:
                     "course_id": forum.get("course"),
                     "course_name": names.get(forum.get("course"), ""),
                     "forum_id": forum.get("id"),
-                    "name": forum.get("name"),
+                    "name": _clean_text(forum.get("name")),
                     "intro": _clean_html(forum.get("intro")),
                 }
             )
@@ -389,7 +390,7 @@ class CourseClient:
             out.append(
                 {
                     "id": d.get("id"),
-                    "subject": d.get("name"),
+                    "subject": _clean_text(d.get("name")),
                     "author": d.get("userfullname"),
                     "created": _ts(d.get("timemodified") or d.get("created")),
                     "message": _clean_html(d.get("message")),
@@ -402,6 +403,29 @@ class CourseClient:
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
+def _decode_entities(text: str, passes: int = 2) -> str:
+    """Decode HTML entities, tolerating Moodle's occasional double-escaping.
+
+    Moodle sometimes stores already-escaped text, so ``F&#39;26`` arrives where
+    ``F'26`` was meant. One pass fixes single escapes; a bounded second pass
+    catches ``&amp;#39;`` without risking an unbounded loop.
+    """
+    for _ in range(max(1, passes)):
+        decoded = html.unescape(text)
+        if decoded == text:
+            break
+        text = decoded
+    return text
+
+
+def _clean_text(value: Any, limit: int = 300) -> str:
+    """Decode entities and normalise whitespace for a short display field."""
+    if value is None:
+        return ""
+    text = _decode_entities(str(value))
+    return re.sub(r"\s+", " ", text).strip()[:limit]
+
+
 def _clean_html(value: Any, limit: int = 600) -> str:
     if not value:
         return ""
@@ -409,14 +433,7 @@ def _clean_html(value: Any, limit: int = 600) -> str:
     text = re.sub(r"(?s)<br\s*/?>", "\n", text)
     text = re.sub(r"(?s)</p>", "\n", text)
     text = re.sub(r"(?s)<[^>]+>", " ", text)
-    text = (
-        text.replace("&nbsp;", " ")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", '"')
-        .replace("&#39;", "'")
-    )
+    text = _decode_entities(text)
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     return text[:limit]
@@ -443,7 +460,7 @@ def _module_summary(module: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": module.get("id"),
         "cmid": module.get("instance"),
-        "name": module.get("name"),
+        "name": _clean_text(module.get("name")),
         "modname": module.get("modname"),
         "visible": bool(module.get("visible", 1)),
         "url": module.get("url"),
@@ -477,7 +494,7 @@ def _extract_files(sections: list[dict[str, Any]], course: Course) -> list[Cours
                     continue
                 files.append(
                     CourseFile(
-                        filename=content.get("filename") or "unnamed",
+                        filename=_clean_text(content.get("filename") or "unnamed", limit=200),
                         fileurl=url,
                         filesize=int(content.get("filesize") or 0),
                         mimetype=str(content.get("mimetype") or ""),
@@ -499,20 +516,23 @@ def _event_summary(event: dict[str, Any]) -> dict[str, Any]:
     duration = event.get("timeduration") or 0
     return {
         "id": event.get("id"),
-        "name": event.get("name"),
+        "name": _clean_text(event.get("name")),
         "course_id": event.get("courseid"),
-        "course_name": event.get("coursename") or event.get("course", {}).get("fullname"),
+        "course_name": _clean_text(
+            event.get("coursename") or (event.get("course") or {}).get("fullname")
+        ),
         "module": event.get("modulename"),
         "eventtype": event.get("eventtype"),
         "start": _ts(start),
         "end": _ts(int(start) + int(duration)) if start and duration else None,
-        "due": _ts(event.get("overdue")) if event.get("overdue") else None,
+        # ``overdue`` is a boolean flag, not a timestamp — do not feed it to _ts.
+        "overdue": bool(event.get("overdue")),
         "url": event.get("url"),
         "description": _clean_html(event.get("description"), limit=300),
     }
 
 
-def build_ics(events: list[dict[str, Any]], calendar_name: str = "eClass") -> str:
+def build_ics(events: list[dict[str, Any]], calendar_name: str = "Courses") -> str:
     """Render events as an RFC 5545 iCalendar document."""
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     lines = [
@@ -539,7 +559,7 @@ def build_ics(events: list[dict[str, Any]], calendar_name: str = "eClass") -> st
                 end_dt = datetime.fromisoformat(event["end"])
             except ValueError:
                 pass
-        summary = event.get("course_name") or event.get("name") or "eClass event"
+        summary = event.get("course_name") or event.get("name") or "Course event"
         if event.get("course_name") and event.get("name"):
             summary = f"{event['name']} ({event['course_name']})"
         lines.extend(

@@ -40,3 +40,4 @@ Thumbs.db
 desktop.ini
 .DS_Store
 recon/_*
+recon/_*.py

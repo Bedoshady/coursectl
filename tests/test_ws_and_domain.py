@@ -273,3 +273,59 @@ def test_build_ics_escapes_and_emits_events():
     assert "\\;" in ics and "\\," in ics
     assert ics.count("BEGIN:VEVENT") == 1
     assert ics.endswith("END:VCALENDAR\r\n")
+
+
+# ---------------------------------------------------------------------------
+# event summaries: entity decoding + the overdue-flag bug
+# ---------------------------------------------------------------------------
+def test_event_summary_decodes_html_entities_in_name():
+    """Moodle escaped the apostrophe; names bypassed _clean_html and leaked it."""
+    from coursectl.client import _event_summary
+
+    event = {
+        "id": 1,
+        "name": "Regrading Requests - Programming Test (F&#39;;26) closes",
+        "timestart": 1762441200,
+        "timeduration": 0,
+        "courseid": 7,
+        "modulename": "quiz",
+    }
+    out = _event_summary(event)
+    assert "&#39;" not in out["name"]
+    assert "&amp;" not in out["name"]
+    assert "(F';26)" in out["name"]
+
+
+def test_event_summary_decodes_double_escaped_entities():
+    from coursectl.client import _event_summary
+
+    out = _event_summary({"id": 2, "name": "Quiz &amp;#39;26", "timestart": 1762441200})
+    assert "&" not in out["name"] or "&#" not in out["name"]
+    assert "'" in out["name"]
+
+
+def test_event_summary_overdue_is_boolean_not_timestamp():
+    """Regression: `overdue` is a bool; feeding it to _ts produced 1970 dates."""
+    from coursectl.client import _event_summary
+
+    out = _event_summary(
+        {"id": 3, "name": "Quiz closes", "timestart": 1762441200, "overdue": True}
+    )
+    assert out["overdue"] is True
+    assert "due" not in out, "the bogus due field must be gone"
+    assert "1970" not in str(out)
+
+
+def test_event_summary_times_are_iso_utc():
+    from coursectl.client import _event_summary
+
+    out = _event_summary({"id": 4, "name": "x", "timestart": 1762441200})
+    assert out["start"].endswith("+00:00")
+
+
+def test_clean_text_collapses_whitespace_and_entities():
+    from coursectl.client import _clean_text
+
+    assert _clean_text("  a\n\n b   &amp;  c  ") == "a b & c"
+    assert _clean_text(None) == ""
+    assert _clean_text("x" * 400, limit=10) == "x" * 10
