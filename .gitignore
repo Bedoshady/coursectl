@@ -1,0 +1,41 @@
+# --- Secrets and runtime state ---------------------------------------------
+# Never commit these: they hold your eClass token and encryption key.
+.env
+!.env.example
+data/
+*.key
+*.db
+*.db-wal
+*.db-shm
+browser-profile/
+
+# --- Virtualenv -------------------------------------------------------------
+.venv/
+venv/
+env/
+
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# --- Tooling caches ---------------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Recon scratch output (scripts are tracked, outputs are not) ------------
+recon/_inv/
+recon/ssologin.html
+*.part
+
+# --- OS noise ---------------------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store
